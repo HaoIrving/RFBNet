@@ -2,7 +2,8 @@
 import os.path
 
 # gets home dir cross platform
-home = os.path.expanduser("~/projects/RFBNet")
+# home = os.path.expanduser("~/projects/RFBNet")
+home = os.getcwd()
 ddir = os.path.join(home,"data/VOCdevkit/")
 
 # note: if you used our download scripts, this should be right
