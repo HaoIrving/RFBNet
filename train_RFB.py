@@ -21,9 +21,9 @@ parser = argparse.ArgumentParser(
     description='Receptive Field Block Net Training')
 parser.add_argument('-v', '--version', default='RFB_vgg',
                     help='RFB_vgg ,RFB_E_vgg or RFB_mobile version.')
-parser.add_argument('-s', '--size', default='300',
+parser.add_argument('-s', '--size', default='512',
                     help='300 or 512 input size.')
-parser.add_argument('-d', '--dataset', default='VOC',
+parser.add_argument('-d', '--dataset', default='COCO',
                     help='VOC or COCO dataset')
 parser.add_argument(
     '--basenet', default='./weights/vgg16_reducedfc.pth', help='pretrained base model')
@@ -63,7 +63,7 @@ if args.dataset == 'VOC':
     train_sets = [('2007', 'trainval'), ('2012', 'trainval')]
     cfg = (VOC_300, VOC_512)[args.size == '512']
 else:
-    train_sets = [('2014', 'train'),('2014', 'valminusminival')]
+    train_sets = [('sarship', 'train')]
     cfg = (COCO_300, COCO_512)[args.size == '512']
 
 if args.version == 'RFB_vgg':
@@ -77,9 +77,11 @@ else:
     print('Unkown version!')
 
 img_dim = (300,512)[args.size=='512']
-rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
+# rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
+rgb_means = (98.13131, 98.13131, 98.13131)
 p = (0.6,0.2)[args.version == 'RFB_mobile']
-num_classes = (21, 81)[args.dataset == 'COCO']
+# num_classes = (21, 81)[args.dataset == 'COCO']
+num_classes = 2
 batch_size = args.batch_size
 weight_decay = 0.0005
 gamma = 0.1
@@ -88,9 +90,18 @@ momentum = 0.9
 net = build_net('train', img_dim, num_classes)
 print(net)
 if args.resume_net == None:
-    base_weights = torch.load(args.basenet)
-    print('Loading base network...')
-    net.base.load_state_dict(base_weights)
+    # base_weights = torch.load(args.basenet)
+    # print('Loading base network...')
+    # net.base.load_state_dict(base_weights)
+
+    from weights_init import kaiming_init, constant_init, normal_init
+    def weights_init_relu(m):
+        if isinstance(m, nn.Conv2d):
+            kaiming_init(m)
+        elif isinstance(m, nn.BatchNorm2d):
+            constant_init(m, 1)
+        elif isinstance(m, nn.Linear):
+            normal_init(m, std=0.01)
 
     def xavier(param):
         init.xavier_uniform(param)
@@ -107,6 +118,7 @@ if args.resume_net == None:
 
     print('Initializing weights...')
 # initialize newly added layers' weights with kaiming_normal method
+    net.base.apply(weights_init_relu)
     net.extras.apply(weights_init)
     net.loc.apply(weights_init)
     net.conf.apply(weights_init)
@@ -174,9 +186,10 @@ def train():
     epoch_size = len(dataset) // args.batch_size
     max_iter = args.max_epoch * epoch_size
 
-    stepvalues_VOC = (150 * epoch_size, 200 * epoch_size, 250 * epoch_size)
-    stepvalues_COCO = (90 * epoch_size, 120 * epoch_size, 140 * epoch_size)
-    stepvalues = (stepvalues_VOC,stepvalues_COCO)[args.dataset=='COCO']
+    # stepvalues_VOC = (150 * epoch_size, 200 * epoch_size, 250 * epoch_size)
+    # stepvalues_COCO = (90 * epoch_size, 120 * epoch_size, 140 * epoch_size)
+    # stepvalues = (stepvalues_VOC,stepvalues_COCO)[args.dataset=='COCO']
+    stepvalues = (args.max_epoch * 2 // 3 * epoch_size, args.max_epoch * 8 // 9 * epoch_size, args.max_epoch * epoch_size)
     print('Training',args.version, 'on', dataset.name)
     step_index = 0
 

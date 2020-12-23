@@ -45,6 +45,8 @@ class COCODetection(data.Dataset):
                  dataset_name='COCO'):
         self.root = root
         self.cache_path = os.path.join(self.root, 'cache')
+        if not os.path.exists(self.cache_path):
+            os.mkdir(self.cache_path)
         self.image_set = image_sets
         self.preproc = preproc
         self.target_transform = target_transform
@@ -57,11 +59,14 @@ class COCODetection(data.Dataset):
             'test-dev2015' : 'test2015',
         }
 
-        for (year, image_set) in image_sets:
-            coco_name = image_set+year
-            data_name = (self._view_map[coco_name]
-                        if coco_name in self._view_map
-                        else coco_name)
+        # for (year, image_set) in image_sets:
+        #     coco_name = image_set+year  # 'sarship_train'
+        #     data_name = (self._view_map[coco_name]  # 'sarship_train'
+        #                 if coco_name in self._view_map
+        #                 else coco_name)
+        for (dataset, image_set) in image_sets:
+            coco_name = dataset + '_' + image_set  # 'sarship_train'
+            data_name = image_set  # 'train'
             annofile = self._get_ann_file(coco_name)
             _COCO = COCO(annofile)
             self._COCO = _COCO
@@ -75,10 +80,10 @@ class COCODetection(data.Dataset):
             indexes = _COCO.getImgIds()
             self.image_indexes = indexes
             self.ids.extend([self.image_path_from_index(data_name, index) for index in indexes ])
-            if image_set.find('test') != -1:
-                print('test set will not load annotations!')
-            else:
-                self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))
+            # if image_set.find('test') != -1:
+            #     print('test set will not load annotations!')
+            # else:
+            self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))
 
 
 
@@ -88,18 +93,20 @@ class COCODetection(data.Dataset):
         """
         # Example image path for index=119993:
         #   images/train2014/COCO_train2014_000000119993.jpg
-        file_name = ('COCO_' + name + '_' +
-                     str(index).zfill(12) + '.jpg')
-        image_path = os.path.join(self.root, 'images',
-                              name, file_name)
+        # file_name = ('COCO_' + name + '_' +
+        #              str(index).zfill(12) + '.jpg')
+        # image_path = os.path.join(self.root, 'images',
+        #                       name, file_name)
+        image_path = os.path.join(self.root, name, self._COCO.loadImgs(index)[0]['file_name'])
         assert os.path.exists(image_path), \
                 'Path does not exist: {}'.format(image_path)
         return image_path
 
 
     def _get_ann_file(self, name):
-        prefix = 'instances' if name.find('test') == -1 \
-                else 'image_info'
+        # prefix = 'instances' if name.find('test') == -1 \
+        #         else 'image_info'
+        prefix = 'instances' 
         return os.path.join(self.root, 'annotations',
                         prefix + '_' + name + '.json')
 
@@ -160,12 +167,20 @@ class COCODetection(data.Dataset):
 
         return res
 
-
-
     def __getitem__(self, index):
         img_id = self.ids[index]
         target = self.annotations[index]
-        img = cv2.imread(img_id, cv2.IMREAD_COLOR)
+        img = cv2.imread(img_id, -1)
+
+        pixel_max = img.max()
+        # # pixel_min = img.min()
+        k = pixel_max ** (1 / 255)
+        img = np.clip(img, 1, None)
+        img = np.log(img) / np.log(k)
+
+        img = img[:, :, np.newaxis]
+        img = np.concatenate((img, img, img), axis=2)
+
         height, width, _ = img.shape
 
         if self.target_transform is not None:
@@ -195,7 +210,18 @@ class COCODetection(data.Dataset):
             PIL img
         '''
         img_id = self.ids[index]
-        return cv2.imread(img_id, cv2.IMREAD_COLOR)
+        img = cv2.imread(img_id, -1)
+
+        pixel_max = img.max()
+        # # pixel_min = img.min()
+        k = pixel_max ** (1 / 255)
+        img = np.clip(img, 1, None)
+        img = np.log(img) / np.log(k)
+
+        img = img[:, :, np.newaxis]
+        img = np.concatenate((img, img, img), axis=2)
+
+        return img
 
 
     def pull_tensor(self, index):
