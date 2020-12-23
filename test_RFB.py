@@ -21,9 +21,9 @@ parser = argparse.ArgumentParser(description='Receptive Field Block Net')
 
 parser.add_argument('-v', '--version', default='RFB_vgg',
                     help='RFB_vgg ,RFB_E_vgg or RFB_mobile version.')
-parser.add_argument('-s', '--size', default='300',
+parser.add_argument('-s', '--size', default='512',
                     help='300 or 512 input size.')
-parser.add_argument('-d', '--dataset', default='VOC',
+parser.add_argument('-d', '--dataset', default='COCO',
                     help='VOC or COCO version')
 parser.add_argument('-m', '--trained_model', default='weights/RFB300_80_5.pth',
                     type=str, help='Trained state_dict file path to open')
@@ -68,7 +68,8 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
         os.mkdir(save_folder)
     # dump predictions and assoc. ground truth to text file for now
     num_images = len(testset)
-    num_classes = (21, 81)[args.dataset == 'COCO']
+    # num_classes = (21, 81)[args.dataset == 'COCO']
+    num_classes = 2
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(num_classes)]
 

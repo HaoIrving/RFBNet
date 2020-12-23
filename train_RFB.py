@@ -244,8 +244,8 @@ def train():
         if iteration % 10 == 0:
             print('Epoch:' + repr(epoch) + ' || epochiter: ' + repr(iteration % epoch_size) + '/' + repr(epoch_size)
                   + '|| Totel iter ' +
-                  repr(iteration) + ' || L: %.4f C: %.4f||' % (
-                loss_l.item(),loss_c.item()) + 
+                  repr(iteration) + ' || L: %.4f C: %.4f loss: %.4f ||' % (
+                loss_l.item(),loss_c.item(), loss.item()) + 
                 'Batch time: %.4f sec. ||' % (load_t1 - load_t0) + 'LR: %.8f' % (lr))
 
     torch.save(net.state_dict(), args.save_folder +
