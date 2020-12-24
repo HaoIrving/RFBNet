@@ -35,7 +35,7 @@ parser.add_argument('--num_workers', default=8,
                     type=int, help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True,
                     type=bool, help='Use cuda to train model')
-parser.add_argument('--ngpu', default=1, type=int, help='gpus')
+parser.add_argument('--ngpu', default=4, type=int, help='gpus')
 parser.add_argument('--lr', '--learning-rate',
                     default=4e-3, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
@@ -76,6 +76,7 @@ elif args.version == 'RFB_mobile':
 else:
     print('Unkown version!')
 
+args.lr = 1e-3 / 2
 img_dim = (300,512)[args.size=='512']
 # rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
 rgb_means = (98.13131, 98.13131, 98.13131)
@@ -86,6 +87,7 @@ batch_size = args.batch_size
 weight_decay = 0.0005
 gamma = 0.1
 momentum = 0.9
+neg_pos_ratio = 7
 
 net = build_net('train', img_dim, num_classes)
 print(net)
@@ -156,7 +158,7 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr,
 #optimizer = optim.RMSprop(net.parameters(), lr=args.lr,alpha = 0.9, eps=1e-08,
 #                      momentum=args.momentum, weight_decay=args.weight_decay)
 
-criterion = MultiBoxLoss(num_classes, 0.5, True, 0, True, 3, 0.5, False)
+criterion = MultiBoxLoss(num_classes, 0.5, True, 0, True, neg_pos_ratio, 0.5, False)
 priorbox = PriorBox(cfg)
 with torch.no_grad():
     priors = priorbox.forward()

@@ -17,6 +17,8 @@ from layers.functions import Detect,PriorBox
 from utils.nms_wrapper import nms
 from utils.timer import Timer
 
+import cv2
+
 parser = argparse.ArgumentParser(description='Receptive Field Block Net')
 
 parser.add_argument('-v', '--version', default='RFB_vgg',
@@ -35,6 +37,10 @@ parser.add_argument('--cpu', default=False, type=bool,
                     help='Use cpu nms')
 parser.add_argument('--retest', default=False, type=bool,
                     help='test cache results')
+parser.add_argument('--show_image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--vis_thres', default=0.5, type=float, help='visualization_threshold')
+parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
+parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
 args = parser.parse_args()
 
 if not os.path.exists(args.save_folder):
@@ -62,7 +68,7 @@ with torch.no_grad():
         priors = priors.cuda()
 
 
-def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image=300, thresh=0.005):
+def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image=300, confidence_threshold=0.005, nms_threshold=0.4):
 
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
@@ -109,7 +115,7 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
         _t['misc'].tic()
 
         for j in range(1, num_classes):
-            inds = np.where(scores[:, j] > thresh)[0]
+            inds = np.where(scores[:, j] > confidence_threshold)[0]
             if len(inds) == 0:
                 all_boxes[j][i] = np.empty([0, 5], dtype=np.float32)
                 continue
@@ -118,7 +124,7 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
             c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(
                 np.float32, copy=False)
 
-            keep = nms(c_dets, 0.45, force_cpu=args.cpu)
+            keep = nms(c_dets, nms_threshold, force_cpu=args.cpu)
             c_dets = c_dets[keep, :]
             all_boxes[j][i] = c_dets
         if max_per_image > 0:
@@ -136,6 +142,21 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
                 .format(i + 1, num_images, detect_time, nms_time))
             _t['im_detect'].clear()
             _t['misc'].clear()
+        
+        if args.show_image:
+            img_gt = img.astype(np.uint8)
+            for b in all_boxes[1][i]:
+                if b[4] < args.vis_thres:
+                    continue
+                text = "{:.4f}".format(b[4])
+                b = list(map(int, b))
+                cv2.rectangle(img_gt, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
+                cx = b[0]
+                cy = b[1] + 12
+                cv2.putText(img_gt, text, (cx, cy),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+            cv2.imshow('res', img_gt)
+            cv2.waitKey(0)
 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -145,9 +166,14 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
 
 
 if __name__ == '__main__':
+    args.trained_model = 'weights/RFB_vgg_COCO_epoches_100.pth'
+    args.show_image = True
+    args.confidence_threshold = 0.01
+    args.nms_threshold = 0.01
     # load net
     img_dim = (300,512)[args.size=='512']
-    num_classes = (21, 81)[args.dataset == 'COCO']
+    # num_classes = (21, 81)[args.dataset == 'COCO']
+    num_classes = 2
     net = build_net('test', img_dim, num_classes)    # initialize detector
     state_dict = torch.load(args.trained_model)
     # create new OrderedDict that does not contain `module.`
@@ -171,7 +197,7 @@ if __name__ == '__main__':
             VOCroot, [('2007', 'test')], None, AnnotationTransform())
     elif args.dataset == 'COCO':
         testset = COCODetection(
-            COCOroot, [('2014', 'minival')], None)
+            COCOroot, [('sarship', 'test')], None)
             #COCOroot, [('2015', 'test-dev')], None)
     else:
         print('Only VOC and COCO dataset are supported now!')
@@ -185,7 +211,8 @@ if __name__ == '__main__':
     top_k = 200
     detector = Detect(num_classes,0,cfg)
     save_folder = os.path.join(args.save_folder,args.dataset)
-    rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
+    # rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
+    rgb_means = (98.13131, 98.13131, 98.13131)
     test_net(save_folder, net, detector, args.cuda, testset,
              BaseTransform(net.size, rgb_means, (2, 0, 1)),
-             top_k, thresh=0.01)
+             top_k, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold)
