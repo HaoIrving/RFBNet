@@ -92,8 +92,7 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
 
     for i in range(num_images):
         img = testset.pull_image(i)
-        scale = torch.Tensor([img.shape[1], img.shape[0],
-                             img.shape[1], img.shape[0]])
+        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
         with torch.no_grad():
             x = transform(img).unsqueeze(0)
             if cuda:
@@ -166,31 +165,7 @@ def test_net(save_folder, net, detector, cuda, testset, transform, max_per_image
 
 
 if __name__ == '__main__':
-    args.trained_model = 'weights/RFB_vgg_COCO_epoches_100.pth'
-    args.show_image = True
-    args.confidence_threshold = 0.01
-    args.nms_threshold = 0.01
-    # load net
-    img_dim = (300,512)[args.size=='512']
-    # num_classes = (21, 81)[args.dataset == 'COCO']
-    num_classes = 2
-    net = build_net('test', img_dim, num_classes)    # initialize detector
-    state_dict = torch.load(args.trained_model)
-    # create new OrderedDict that does not contain `module.`
-
     from collections import OrderedDict
-    new_state_dict = OrderedDict()
-    for k, v in state_dict.items():
-        head = k[:7]
-        if head == 'module.':
-            name = k[7:] # remove `module.`
-        else:
-            name = k
-        new_state_dict[name] = v
-    net.load_state_dict(new_state_dict)
-    net.eval()
-    print('Finished loading model!')
-    print(net)
     # load data
     if args.dataset == 'VOC':
         testset = VOCDetection(
@@ -198,21 +173,50 @@ if __name__ == '__main__':
     elif args.dataset == 'COCO':
         testset = COCODetection(
             COCOroot, [('sarship', 'test')], None)
-            #COCOroot, [('2015', 'test-dev')], None)
     else:
         print('Only VOC and COCO dataset are supported now!')
-    if args.cuda:
-        net = net.cuda()
-        cudnn.benchmark = True
-    else:
-        net = net.cpu()
+    
+    # args.show_image = True
+    args.vis_thres = 0.1
+    # args.retest = True
+    args.confidence_threshold = 0.01
+    args.nms_threshold = 0.5
     # evaluation
-    #top_k = (300, 200)[args.dataset == 'COCO']
     top_k = 200
-    detector = Detect(num_classes,0,cfg)
     save_folder = os.path.join(args.save_folder,args.dataset)
-    # rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
     rgb_means = (98.13131, 98.13131, 98.13131)
-    test_net(save_folder, net, detector, args.cuda, testset,
-             BaseTransform(net.size, rgb_means, (2, 0, 1)),
-             top_k, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold)
+    # load net
+    img_dim = (300,512)[args.size=='512']
+    num_classes = 2
+    detector = Detect(num_classes,0,cfg)
+    net = build_net('test', img_dim, num_classes)    # initialize detector
+    
+    start_epoch = 100; step = 10
+    ToBeTested = []
+    # ToBeTested = [f'weights/RFB_vgg_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append('weights/Final_RFB_vgg_COCO.pth') # 68.5
+    for index, model_path in enumerate(ToBeTested):
+        args.trained_model = model_path
+        state_dict = torch.load(args.trained_model)
+        # create new OrderedDict that does not contain `module.`
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            head = k[:7]
+            if head == 'module.':
+                name = k[7:] # remove `module.`
+            else:
+                name = k
+            new_state_dict[name] = v
+        net.load_state_dict(new_state_dict)
+        net.eval()
+        print('Finished loading model!')
+        # print(net)
+        if args.cuda:
+            net = net.cuda()
+            cudnn.benchmark = True
+        else:
+            net = net.cpu()
+        
+        test_net(save_folder, net, detector, args.cuda, testset,
+                BaseTransform(net.size, rgb_means, (2, 0, 1)),
+                top_k, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold)
