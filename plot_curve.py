@@ -1,5 +1,10 @@
 import matplotlib.pyplot as plt
+import json 
+import os
+import numpy as np
+import seaborn as sns
 
+save_folder = os.path.join('eval/', 'COCO')
 
 def plot_loss_and_lr(train_loss, learning_rate):
     try:
@@ -29,33 +34,49 @@ def plot_loss_and_lr(train_loss, learning_rate):
         print(e)
 
 
-def plot_map(mAP):
-    # try:
-    x = list(range(len(mAP)))
-    plt.plot(x, mAP, label='mAp')
-    plt.xlabel('epoch')
-    plt.ylabel('mAP')
-    plt.title('Eval mAP')
-    plt.xlim(0, len(mAP))
-    plt.legend(loc='best')
-    # plt.plot(xs, ys, label=legend[i * num_metrics + j], marker='o')
-    plt.show()
+def plot_map(ap_stats, metrics, legend):
+    style = 'dark'
+    sns.set_style(style)
+    out = os.path.join(save_folder, 'ap.png')
+    title = None
 
-        # plt.savefig('./mAP.png')
-        # plt.close()
-        # print("successful save mAP curve!")
-    # except Exception as e:
-    #     print(e)
+    i = 0
+    num_metrics = len(metrics)
+    epochs = ap_stats['epoch']
+    for j, metric in enumerate(metrics):
+        xs  = np.asarray(epochs)
+        ys = ap_stats[metric]
+        ax = plt.gca()
+        ax.set_xticks(xs)
+        plt.xlabel('epoch')
+        plt.plot(xs, ys, label=legend[i * num_metrics + j], marker='o')
+
+        plt.legend()
+    if title is not None:
+        plt.title(title)
+    
+    print(f'save curve to: {out}')
+    plt.savefig(out)
+    plt.show()
+    plt.cla()
+
 
 if __name__ == '__main__':
+    ap_stats = {'ap50': [0.003985194073006601, 0.6851529061645676], 
+            'ap_small': [0.0, 0.0673558810299327], 
+            'ap_medium': [0.0012955153247929476, 0.34469121736332514], 
+            'ap_large': [0.005240430664568138, 0.30883813438445296], 
+            'epoch': [100, 110]}
+            
     res_file = None
+    res_file = os.path.join(save_folder, 'ap_stats.json')
     if res_file:
+        print('Writing ap stats json to {}'.format(res_file))
+        with open(res_file, 'w') as fid:
+            json.dump(ap_stats, fid)
         with open(res_file) as f:
             ap_stats = json.load(f)
-    ap_stats = {'ap50': [0.003985194073006601, 0.6851529061645676], 
-                'ap_small': [0.0, 0.0673558810299327], 
-                'ap_medium': [0.0012955153247929476, 0.34469121736332514], 
-                'ap_large': [0.005240430664568138, 0.30883813438445296], 
-                'epoch': [100, 110]}
-    
-    plot_map(ap_stats['ap50'])
+
+    metrics = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
+    legend  = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
+    plot_map(ap_stats, metrics, legend)
