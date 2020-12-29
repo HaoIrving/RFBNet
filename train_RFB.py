@@ -55,9 +55,10 @@ parser.add_argument('--save_folder', default='./weights/',
                     help='Location to save checkpoint models')
 args = parser.parse_args()
 
-
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
+
+sys.stdout = Logger(os.path.join(args.save_folder, 'log.txt'))
 
 if args.dataset == 'VOC':
     train_sets = [('2007', 'trainval'), ('2012', 'trainval')]
