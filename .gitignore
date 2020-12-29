@@ -15,3 +15,4 @@ weights/
 eval/
 
 .vscode/settings.json
+data/SAR_SHIP_coco
