@@ -14,4 +14,4 @@ build/
 weights/
 eval/
 
-.vscode
+.vscode/settings.json
