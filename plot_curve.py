@@ -67,9 +67,9 @@ if __name__ == '__main__':
     res_file = None
     res_file = os.path.join(save_folder, 'ap_stats.json')
     if res_file:
-        print('Writing ap stats json to {}'.format(res_file))
-        with open(res_file, 'w') as fid:
-            json.dump(ap_stats, fid)
+        # print('Writing ap stats json to {}'.format(res_file))
+        # with open(res_file, 'w') as fid:
+        #     json.dump(ap_stats, fid)
         with open(res_file) as f:
             ap_stats = json.load(f)
 

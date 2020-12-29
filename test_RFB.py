@@ -201,7 +201,7 @@ if __name__ == '__main__':
     
     ap_stats = {"ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
-    start_epoch = 100; step = 10
+    start_epoch = 20; step = 20
     # ToBeTested = ['weights/RFB_vgg_COCO_epoches_100.pth']
     ToBeTested = [f'weights/RFB_vgg_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
     ToBeTested.append('weights/Final_RFB_vgg_COCO.pth') # 68.5
