@@ -232,7 +232,16 @@ if __name__ == '__main__':
         test_net(save_folder, net, detector, args.cuda, testset,
                 BaseTransform(net.size, rgb_means, (2, 0, 1)), top_k, 
                 keep_top_k, confidence_threshold=args.confidence_threshold, nms_threshold=args.nms_threshold, AP_stats=ap_stats)
+    
     print(ap_stats)
+    res_file = os.path.join(save_folder, 'ap_stats.json')
+    import json
+    print('Writing ap stats json to {}'.format(res_file))
+        with open(res_file, 'w') as fid:
+            json.dump(ap_stats, fid)
+    with open(res_file) as f:
+        ap_stats = json.load(f)
+    
     if len(ap_stats['epoch']) != 0:
         from plot_curve import plot_map
         plot_map(ap_stats['ap50'])
