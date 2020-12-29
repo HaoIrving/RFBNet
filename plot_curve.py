@@ -48,9 +48,14 @@ def plot_map(mAP):
     #     print(e)
 
 if __name__ == '__main__':
+    res_file = None
+    if res_file:
+        with open(res_file) as f:
+            ap_stats = json.load(f)
     ap_stats = {'ap50': [0.003985194073006601, 0.6851529061645676], 
                 'ap_small': [0.0, 0.0673558810299327], 
                 'ap_medium': [0.0012955153247929476, 0.34469121736332514], 
                 'ap_large': [0.005240430664568138, 0.30883813438445296], 
                 'epoch': [100, 110]}
+    
     plot_map(ap_stats['ap50'])
