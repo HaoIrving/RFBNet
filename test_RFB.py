@@ -242,8 +242,10 @@ if __name__ == '__main__':
     with open(res_file) as f:
         ap_stats = json.load(f)
     
-    from plot_curve import plot_map
+    from plot_curve import plot_map, plot_loss
     metrics = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
     legend  = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
+    plot_map(save_folder, ap_stats, metrics, legend)
 
-    plot_map(ap_stats, metrics, legend)
+    txt_log = 'weights/log.txt'
+    plot_loss(save_folder, txt_log)

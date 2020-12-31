@@ -65,8 +65,8 @@ class COCODetection(data.Dataset):
         #                 else coco_name)
         for (dataset, image_set) in image_sets:
             coco_name = dataset + '_' + image_set  # 'sarship_train'
-            data_name = image_set  # 'train'
-            annofile = self._get_ann_file(coco_name)
+            data_name = image_set  # 'train' or 'test'
+            annofile = self._get_ann_file(coco_name)  # 'instances_sarship_train.json'
             _COCO = COCO(annofile)
             self._COCO = _COCO
             self.coco_name = coco_name
@@ -82,7 +82,7 @@ class COCODetection(data.Dataset):
             # if image_set.find('test') != -1:
             #     print('test set will not load annotations!')
             # else:
-            self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))
+            self.annotations.extend(self._load_coco_annotations(coco_name, indexes,_COCO))  # dont need care this
 
 
 

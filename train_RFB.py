@@ -120,7 +120,7 @@ if args.resume_net == None:
                 m.state_dict()[key][...] = 0
 
     print('Initializing weights...')
-# initialize newly added layers' weights with kaiming_normal method
+    # initialize newly added layers' weights with kaiming_normal method
     net.base.apply(weights_init_relu)
     net.extras.apply(weights_init)
     net.loc.apply(weights_init)
@@ -129,9 +129,8 @@ if args.resume_net == None:
     if args.version == 'RFB_E_vgg':
         net.reduce.apply(weights_init)
         net.up_reduce.apply(weights_init)
-
 else:
-# load resume network
+    # load resume network
     print('Loading resume network...')
     state_dict = torch.load(args.resume_net)
     # create new OrderedDict that does not contain `module.`
@@ -165,7 +164,6 @@ with torch.no_grad():
     priors = priorbox.forward()
     if args.cuda:
         priors = priors.cuda()
-
 
 
 def train():
