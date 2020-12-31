@@ -15,6 +15,7 @@ from data import VOCroot, COCOroot, VOC_300, VOC_512, COCO_300, COCO_512, COCO_m
 from layers.modules import MultiBoxLoss
 from layers.functions import PriorBox
 import time
+from utils.logger import Logger
 
 
 parser = argparse.ArgumentParser(
