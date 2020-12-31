@@ -184,6 +184,8 @@ if __name__ == '__main__':
     # args.show_image = True
     # args.vis_thres = 0.1
     # args.retest = True
+    prefix = 'weights/lr_5e4'
+    save_folder = os.path.join(args.save_folder, prefix.split('/')[-1])
 
     args.confidence_threshold = 0.01
     args.nms_threshold = 0.5
@@ -191,7 +193,6 @@ if __name__ == '__main__':
     # evaluation
     top_k = 1000
     keep_top_k = 500
-    save_folder = os.path.join(args.save_folder, args.dataset)
     rgb_means = (98.13131, 98.13131, 98.13131)
     # load net
     img_dim = (300,512)[args.size=='512']
@@ -199,12 +200,12 @@ if __name__ == '__main__':
     detector = Detect(num_classes,0,cfg)
     net = build_net('test', img_dim, num_classes)    # initialize detector
     
-    ap_stats = {"ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
+    ap_stats = {'ap': [], "ap50": [], "ap_small": [], "ap_medium": [], "ap_large": [], "epoch": []}
 
     start_epoch = 20; step = 20
     # ToBeTested = ['weights/RFB_vgg_COCO_epoches_100.pth']
-    ToBeTested = [f'weights/RFB_vgg_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
-    ToBeTested.append('weights/Final_RFB_vgg_COCO.pth') # 68.5
+    ToBeTested = [prefix + f'/RFB_vgg_COCO_epoches_{epoch}.pth' for epoch in range(start_epoch, 300, step)]
+    ToBeTested.append(prefix + '/Final_RFB_vgg_COCO.pth') # 68.5
     for index, model_path in enumerate(ToBeTested):
         args.trained_model = model_path
         state_dict = torch.load(args.trained_model)
@@ -243,9 +244,9 @@ if __name__ == '__main__':
         ap_stats = json.load(f)
     
     from plot_curve import plot_map, plot_loss
-    metrics = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
-    legend  = ['ap50', 'ap_small', 'ap_medium', 'ap_large']
+    metrics = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
+    legend  = ['ap', 'ap50', 'ap_small', 'ap_medium', 'ap_large']
     plot_map(save_folder, ap_stats, metrics, legend)
 
-    txt_log = 'weights/log.txt'
+    txt_log = prefix + '/log.txt'
     plot_loss(save_folder, txt_log)
