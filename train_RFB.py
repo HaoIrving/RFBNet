@@ -78,7 +78,7 @@ elif args.version == 'RFB_mobile':
 else:
     print('Unkown version!')
 
-args.lr = 1e-3 / 2
+# args.lr = 1e-3 / 2
 img_dim = (300,512)[args.size=='512']
 # rgb_means = ((104, 117, 123),(103.94,116.78,123.68))[args.version == 'RFB_mobile']
 rgb_means = (98.13131, 98.13131, 98.13131)
